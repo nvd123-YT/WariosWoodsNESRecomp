@@ -1,0 +1,43 @@
+# Bootstrapped local CMake, uv, managed Python and temporary downloads
+/.tools/
+
+# Submodule-local build output
+/nesrecomp/build/
+/recomp-ui/build/
+/SDL2/build/
+
+# CMake, compiler and launcher packaging output
+/build/
+/build-*/
+/build-ci/
+/cmake-build-*/
+/CMakeFiles/
+/CMakeCache.txt
+/compile_commands.json
+/generated/
+/payload.zip
+/dist/
+/pyinstaller-work/
+/AppDir/
+/dmg-staging/
+/release/
+/*.spec
+
+# ROMs, disk images, local saves and runtime configuration
+*.nes
+*.unf
+*.unif
+*.fds
+*.qd
+*.rom
+*.sav
+*.cycstate
+config.ini
+keybinds.ini
+*.log
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
