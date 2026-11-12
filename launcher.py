@@ -217,7 +217,7 @@ class WariosWoodsBuilder:
             messagebox.showerror(APP_TITLE, "Select an existing .nes ROM first.")
             return
         try:
-            identity = identify_nes_rom(rom, "warioswoods")
+            identity = identify_nes_rom(rom)
         except RomIdentityError as error:
             messagebox.showerror(APP_TITLE, str(error))
             return

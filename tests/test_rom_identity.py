@@ -1,4 +1,4 @@
-"""ROM identity tests use synthetic bytes; no commercial game data is included."""
+"""Tests for this project's own ROM fingerprint allowlist; no commercial ROMs included."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -38,60 +38,46 @@ class RomIdentityTests(unittest.TestCase):
                 mock.patch("rom_identity.hashlib.sha1") as sha1,
             ):
                 sha1.return_value.hexdigest.return_value = fingerprint.body_sha1
-                return rom_identity.identify_nes_rom(path, fingerprint.game_id)
+                return rom_identity.identify_nes_rom(path)
 
-    def test_known_excitebike_profile_is_accepted(self):
-        fingerprint = next(x for x in rom_identity.ROM_FINGERPRINTS if x.game_id == "excitebike")
-        identity = self.identify_synthetic_match(fingerprint)
-        self.assertEqual(identity.title, "Excitebike")
-        self.assertEqual(identity.region, "Japan / USA (NTSC)")
+    def test_only_this_games_fingerprints_are_catalogued(self):
+        self.assertEqual(len(rom_identity.ROM_FINGERPRINTS), 2)
+        self.assertTrue(all(item.title == rom_identity.GAME_TITLE for item in rom_identity.ROM_FINGERPRINTS))
+        self.assertEqual(rom_identity.GAME_TITLE, "Wario's Woods")
 
-    def test_both_warios_woods_regions_are_accepted(self):
-        profiles = [x for x in rom_identity.ROM_FINGERPRINTS if x.game_id == "warioswoods"]
-        self.assertEqual({x.region for x in profiles}, {"USA (NTSC)", "Europe (PAL)"})
-        for fingerprint in profiles:
+    def test_known_regional_images_are_accepted(self):
+        for fingerprint in rom_identity.ROM_FINGERPRINTS:
             with self.subTest(region=fingerprint.region):
                 identity = self.identify_synthetic_match(fingerprint)
-                self.assertEqual(identity.title, "Wario's Woods")
+                self.assertEqual(identity.title, rom_identity.GAME_TITLE)
                 self.assertEqual(identity.region, fingerprint.region)
+                self.assertEqual(identity.mapper, fingerprint.mapper)
 
-    def test_a_verified_other_game_is_rejected(self):
-        fingerprint = next(x for x in rom_identity.ROM_FINGERPRINTS if x.game_id == "excitebike")
-        header = make_header(fingerprint.mapper, fingerprint.prg_size, fingerprint.chr_size)
-        synthetic = header + bytes(fingerprint.prg_size + fingerprint.chr_size)
-        with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "renamed-warios-woods.nes"
-            path.write_bytes(synthetic)
-            with (
-                mock.patch(
-                    "rom_identity.zlib.crc32",
-                    side_effect=[
-                        fingerprint.prg_crc32,
-                        fingerprint.chr_crc32,
-                        fingerprint.body_crc32,
-                    ],
-                ),
-                mock.patch("rom_identity.hashlib.sha1") as sha1,
-            ):
-                sha1.return_value.hexdigest.return_value = fingerprint.body_sha1
-                with self.assertRaisesRegex(rom_identity.RomIdentityError, "verified Excitebike.*not Wario's Woods"):
-                    rom_identity.identify_nes_rom(path, "warioswoods")
-
-    def test_correct_mapper_and_size_are_not_enough(self):
-        fingerprint = next(x for x in rom_identity.ROM_FINGERPRINTS if x.game_id == "warioswoods")
+    def test_same_mapper_and_sizes_without_matching_contents_are_rejected(self):
+        fingerprint = rom_identity.ROM_FINGERPRINTS[0]
         header = make_header(fingerprint.mapper, fingerprint.prg_size, fingerprint.chr_size)
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory) / "not-warios-woods.nes"
+            path = Path(directory) / "renamed-game.nes"
             path.write_bytes(header + bytes(fingerprint.prg_size + fingerprint.chr_size))
-            with self.assertRaisesRegex(rom_identity.RomIdentityError, "not recognized"):
-                rom_identity.identify_nes_rom(path, "warioswoods")
+            with self.assertRaisesRegex(rom_identity.RomIdentityError, "not recognized as a verified"):
+                rom_identity.identify_nes_rom(path)
+
+    def test_wrong_mapper_is_rejected(self):
+        fingerprint = rom_identity.ROM_FINGERPRINTS[0]
+        wrong_mapper = (fingerprint.mapper + 1) % 15
+        header = make_header(wrong_mapper, fingerprint.prg_size, fingerprint.chr_size)
+        with tempfile.TemporaryDirectory() as directory:
+            path = Path(directory) / "wrong-mapper.nes"
+            path.write_bytes(header + bytes(fingerprint.prg_size + fingerprint.chr_size))
+            with self.assertRaisesRegex(rom_identity.RomIdentityError, "not recognized as a verified"):
+                rom_identity.identify_nes_rom(path)
 
     def test_invalid_header_is_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "wrong-file.nes"
             path.write_bytes(b"not an NES ROM")
             with self.assertRaisesRegex(rom_identity.RomIdentityError, "not a complete"):
-                rom_identity.identify_nes_rom(path, "excitebike")
+                rom_identity.identify_nes_rom(path)
 
 
 if __name__ == "__main__":
