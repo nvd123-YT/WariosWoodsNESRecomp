@@ -85,6 +85,9 @@ jobs:
           python tests/create_smoke_rom.py --output $Rom
           if ($LASTEXITCODE -ne 0) { throw "Smoke ROM generation failed: $LASTEXITCODE" }
 
+      - name: Verify exact game ROM fingerprints
+        run: python -m unittest discover -s tests -p "test_rom_identity.py"
+
       - name: Configure native test build (macOS/Linux)
         if: runner.os != 'Windows'
         shell: bash

@@ -18,6 +18,7 @@ ROOT_FILES = (
     ".gitmodules",
     ".gitignore",
     "README.md",
+    "rom_identity.py",
     "CMakeLists.txt",
     "game.toml",
     "setup.sh",
@@ -35,6 +36,7 @@ ROOT_FILES = (
     "tools/build.ps1",
     "tools/package_source.py",
     "tests/create_smoke_rom.py",
+    "tests/test_rom_identity.py",
     ".github/workflows/source-release.yml",
 )
 DEPENDENCIES = ("nesrecomp", "recomp-ui", "SDL2")

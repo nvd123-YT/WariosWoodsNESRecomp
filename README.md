@@ -4,6 +4,10 @@ A cross-platform **local-build launcher** for the NES version of Wario's Woods, 
 
 > **Bring your own NES ROM.** This project targets the NES release, not the separate SNES version. The ROM picker requires an MMC3 / Mapper 4 cartridge. The downloadable applications do not contain a ROM, ROM-derived generated C source, or a prebuilt playable game; the native game is generated and compiled locally from a compatible `.nes` ROM you are legally entitled to use.
 
+## ROM identity verification
+
+The launcher verifies the header, Mapper 4, exact PRG and CHR sizes, separate PRG/CHR CRC-32 values, the combined ROM CRC-32, and the combined SHA-1 against known clean retail images. The supported fingerprints are **USA (NTSC)** and **Europe (PAL)**. A matching filename or Mapper 4 alone is not enough; modified ROM hacks and unlisted revisions are rejected.
+
 ## Separate platform downloads
 
 Every successful push to `main` runs the three platform builds. After all three succeed, GitHub creates a **new release** containing three separate assets:

@@ -15,6 +15,8 @@ import zipfile
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
+from rom_identity import RomIdentityError, identify_nes_rom
+
 
 APP_TITLE = "Wario's Woods Recompiled Builder"
 APP_ID = "WariosWoodsRecomp"
@@ -215,26 +217,9 @@ class WariosWoodsBuilder:
             messagebox.showerror(APP_TITLE, "Select an existing .nes ROM first.")
             return
         try:
-            with rom.open("rb") as source:
-                header = source.read(16)
-        except OSError as error:
-            messagebox.showerror(APP_TITLE, "Could not read the selected ROM: " + str(error))
-            return
-        if len(header) < 16 or header[:4] != b"NES\x1a":
-            messagebox.showerror(
-                APP_TITLE,
-                "The selected file does not have a complete iNES/NES 2.0 header. Select a Wario's Woods NES ROM.",
-            )
-            return
-        flags6, flags7 = header[6], header[7]
-        mapper = (flags6 >> 4) | (flags7 & 0xF0)
-        if (flags7 & 0x0C) == 0x08:
-            mapper |= (header[8] & 0x0F) << 8
-        if mapper != 4:
-            messagebox.showerror(
-                APP_TITLE,
-                f"Wario's Woods for NES requires an MMC3 / Mapper 4 cartridge. This file reports Mapper {mapper}. Select a compatible .nes ROM.",
-            )
+            identity = identify_nes_rom(rom, "warioswoods")
+        except RomIdentityError as error:
+            messagebox.showerror(APP_TITLE, str(error))
             return
 
         self.running = True
@@ -243,6 +228,7 @@ class WariosWoodsBuilder:
         self.status.set("Preparing bundled sources and tools…")
         self._append("")
         self._append("Selected ROM: " + str(rom))
+        self._append(f"Verified game: {identity.title} ({identity.region})")
         threading.Thread(target=self._build_worker, args=(rom,), daemon=True).start()
 
     def _emit(self, kind: str, value: object) -> None:
