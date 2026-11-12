@@ -1,16 +1,16 @@
-# Excitebike Recompiled Builder
+# Wario's Woods Recompiled Builder
 
-A cross-platform **local-build launcher** for Excitebike (NES), based on [NESRecomp](https://github.com/mstan/nesrecomp), [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui), and a pinned SDL2 source dependency.
+A cross-platform **local-build launcher** for Wario's Woods (NES), based on [NESRecomp](https://github.com/mstan/nesrecomp), [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui), and a pinned SDL2 source dependency.
 
-> **Bring your own ROM.** The downloadable applications do not contain an Excitebike ROM, ROM-derived generated C source, or a prebuilt playable game. Open the platform launcher, select a compatible `.nes` ROM that you are legally entitled to use, and it will generate and compile the native game locally.
+> **Bring your own ROM.** The downloadable applications do not contain an Wario's Woods ROM, ROM-derived generated C source, or a prebuilt playable game. Open the platform launcher, select a compatible `.nes` ROM that you are legally entitled to use, and it will generate and compile the native game locally.
 
 ## Separate platform downloads
 
 Every successful push to `main` runs the three platform builds. After all three succeed, GitHub creates a **new release** containing three separate assets:
 
-- **macOS ARM64:** `ExcitebikeRecomp-macOS-ARM64.dmg` — contains `ExcitebikeRecomp.app`.
-- **Windows x64:** `ExcitebikeRecomp-Windows-x64.exe`.
-- **Linux x64:** `ExcitebikeRecomp-Linux-x64.AppImage`.
+- **macOS ARM64:** `WariosWoodsRecomp-macOS-ARM64.dmg` — contains `WariosWoodsRecomp.app`.
+- **Windows x64:** `WariosWoodsRecomp-Windows-x64.exe`.
+- **Linux x64:** `WariosWoodsRecomp-Linux-x64.AppImage`.
 
 The release does not combine these downloads into one source ZIP. Previous releases are never replaced or deleted; each new successful push receives a unique tag and a new release page.
 
@@ -23,9 +23,9 @@ Each platform package contains the launcher UI and its local-build resources:
 - A managed Python runtime for build-time tooling.
 - Full pinned NESRecomp and recomp-ui source trees, including NESRecomp's mod runtime/package generators and recomp-ui's Dear ImGui sources and launcher assets.
 - SDL2 source, built statically as part of the local game build.
-- Excitebike's named game configuration and bundled Mods integration.
+- Warios Wood's named game configuration and bundled Mods integration.
 
-The compiled game identifies itself as **Excitebike** in recomp-ui and its window title. Its Mods screen includes two NESRecomp packages generated for the selected ROM's exact cartridge identity: **Replay Capture** (enabled by default; recordings stay local) and **Twitch Chat** (optional and disabled by default; requires the separate chat bridge).
+The compiled game identifies itself as **Wario's Woods** in recomp-ui and its window title. Its Mods screen includes two NESRecomp packages generated for the selected ROM's exact cartridge identity: **Replay Capture** (enabled by default; recordings stay local) and **Twitch Chat** (optional and disabled by default; requires the separate chat bridge).
 
 The launcher extracts these resources into the user's application data directory, clears macOS Gatekeeper quarantine only from the bundled, checksum-verified CMake/Python tool folders, asks for a local ROM, runs CMake, compiles the native game, and starts it. The build directory and game saves stay on the user's computer and are not removed when the launcher closes.
 
@@ -41,7 +41,7 @@ The NES still runs its real hardware picture at **256×240**. The game now suppl
 
 ### HD texture packs vs. internal resolution
 
-Excitebike also builds NESRecomp's **HD texture-pack renderer**. A compatible, user-supplied Mesen HD pack can contain higher-resolution artwork; the in-game menu's **Display → HD resolution** setting then controls the pack's rendering scale (pack resolution or 1× through 64× processing scales). No HD pack is included, and this is not a generic switch that turns the NES's 256×240 hardware framebuffer into an arbitrary 4K/8K framebuffer. Without a compatible pack, the original NES artwork remains native-resolution and integer-scaled.
+Wario's Woods also builds NESRecomp's **HD texture-pack renderer**. A compatible, user-supplied Mesen HD pack can contain higher-resolution artwork; the in-game menu's **Display → HD resolution** setting then controls the pack's rendering scale (pack resolution or 1× through 64× processing scales). No HD pack is included, and this is not a generic switch that turns the NES's 256×240 hardware framebuffer into an arbitrary 4K/8K framebuffer. Without a compatible pack, the original NES artwork remains native-resolution and integer-scaled.
 
 ## Operating-system requirements
 
@@ -56,9 +56,9 @@ The launcher reports build errors in its output window. CMake and Python do not 
 ## Using a release
 
 1. Download the asset matching your operating system.
-2. Open the DMG and move `ExcitebikeRecomp.app` to Applications on macOS. On Windows, run the EXE. On Linux, make the AppImage executable and open it.
-3. Select your own compatible Excitebike `.nes` ROM in the launcher.
-4. Choose **Build Excitebike & Play**. The first local build compiles the pinned runtime and generated game code and can take several minutes. Later launches reuse that build when the same ROM and bundled project version are selected.
+2. Open the DMG and move `WariosWoodsRecomp.app` to Applications on macOS. On Windows, run the EXE. On Linux, make the AppImage executable and open it.
+3. Select your own compatible Wario's Woods `.nes` ROM in the launcher.
+4. Choose **Build Wario's Woods & Play**. The first local build compiles the pinned runtime and generated game code and can take several minutes. Later launches reuse that build when the same ROM and bundled project version are selected.
 
 On macOS, the app is not Developer ID notarized. If Gatekeeper blocks it, use Finder's Open context-menu action and review the macOS security prompt.
 
@@ -69,27 +69,27 @@ On Linux, the AppImage uses the x86_64 Type 2 format. If FUSE is unavailable, ex
 Developers can clone the source and all pinned dependencies:
 
 ```bash
-git clone --recurse-submodules https://github.com/nvd123-YT/ExcitebikeNESRecompiled.git
-cd ExcitebikeNESRecompiled
+git clone --recurse-submodules https://github.com/nvd123-YT/WariosWoodsNESRecomp.git
+cd WariosWoodsNESRecomp
 ```
 
 macOS / Linux:
 
 ```bash
 bash setup.sh
-bash tools/build.sh "/absolute/path/to/Excitebike.nes"
+bash tools/build.sh "/absolute/path/to/WariosWoods.nes"
 ```
 
 Windows PowerShell:
 
 ```powershell
 .\setup.bat
-powershell -ExecutionPolicy Bypass -File .\tools\build.ps1 "C:\Games\Excitebike.nes"
+powershell -ExecutionPolicy Bypass -File .\tools\build.ps1 "C:\Games\WariosWoods.nes"
 ```
 
 ## CI and release safety
 
-The public workflow builds the graphical runner and launcher on macOS ARM64, Windows x64, and Linux x64. It uses a synthetic NROM test cartridge only; it never uses a copyrighted Excitebike ROM or packages ROM-derived output. The three downloadable launcher packages contain source dependencies and portable build tools, but no game data.
+The public workflow builds the graphical runner and launcher on macOS ARM64, Windows x64, and Linux x64. It uses a synthetic NROM test cartridge only; it never uses a copyrighted Wario's Woods ROM or packages ROM-derived output. The three downloadable launcher packages contain source dependencies and portable build tools, but no game data.
 
 Release publishing runs only after all three platform jobs and package checks pass. Each release has a unique tag of the form `build-RUN-ATTEMPT-COMMIT`, preserving older release pages and their download counters.
 
