@@ -2,7 +2,7 @@
 
 A cross-platform **local-build launcher** for the NES version of Wario's Woods, built on [NESRecomp](https://github.com/mstan/nesrecomp), [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui), and a pinned SDL2 source dependency.
 
-> **Bring your own NES ROM.** This project targets the NES release, not the separate SNES version. The ROM picker requires an MMC3 / Mapper 4 cartridge. The downloadable applications do not contain a ROM, ROM-derived generated C source, or a prebuilt playable game; the native game is generated and compiled locally from a compatible `.nes` ROM you are legally entitled to use.
+> **Bring your own NES ROM.** This project targets the NES release, not the separate SNES version. The ROM picker accepts only exact, verified Wario's Woods ROM fingerprints; Mapper 4 by itself is not enough. The downloadable applications do not contain a ROM, ROM-derived generated C source, or a prebuilt playable game; the native game is generated and compiled locally from a compatible `.nes` ROM you are legally entitled to use.
 
 ## ROM identity verification
 
@@ -34,7 +34,7 @@ The launcher extracts these resources into the user's application-data directory
 
 ## Cartridge and save compatibility
 
-The retail NES cartridges use **MMC3 / Mapper 4**. The common North American and European cartridges use battery-backed PRG RAM; the runtime supports the standard MMC3 mapper and cartridge NVRAM path. The launcher rejects ROMs whose headers do not identify Mapper 4, which helps prevent accidentally selecting the SNES version or an unrelated NES game.
+The retail NES cartridges use **MMC3 / Mapper 4**. The common North American and European cartridges use battery-backed PRG RAM; the runtime supports the standard MMC3 mapper and cartridge NVRAM path. The launcher verifies the Wario's Woods PRG and CHR contents against its own regional fingerprints. It does not contain or check fingerprints for other games; unrelated Mapper 4 cartridges, modified ROMs, and unlisted revisions are rejected.
 
 For battery-backed cartridges, the cycle runtime automatically loads and writes the game's battery save in a `saves` folder beside the native executable. The launcher keeps its build and save folders in the operating system's per-user application-data location, so saves remain there when the launcher package is updated. Save files are local and are never uploaded by the release workflow.
 
@@ -101,7 +101,7 @@ Release publishing runs only after all three platform jobs and package checks pa
 
 ## Repository contents
 
-- `launcher.py` — cross-platform ROM picker and local-build UI, including the Mapper 4 check.
+- `launcher.py` — cross-platform ROM picker and local-build UI, including exact Wario's Woods title-specific fingerprint validation.
 - `CMakeLists.txt` and `game.toml` — native recompilation project and Wario's Woods identity.
 - `src/warioswoods_host.c` — title host integration and display hook.
 - `nesrecomp/`, `recomp-ui/`, `SDL2/` — pinned dependency submodules.
