@@ -16,5 +16,5 @@ powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0tools\bootstrap.ps1"
 if errorlevel 1 exit /b 1
 
 echo Setup complete. Use:
-echo   powershell -ExecutionPolicy Bypass -File tools\build.ps1 C:\Games\Excitebike.nes
+echo   powershell -ExecutionPolicy Bypass -File tools\build.ps1 C:\Games\Wario's Woods.nes
 exit /b 0

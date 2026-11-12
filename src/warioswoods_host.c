@@ -1,5 +1,5 @@
 /*
- * Excitebike's presentation extensions for NESRecomp's cycle host.
+ * Wario's Woods's presentation extensions for NESRecomp's cycle host.
  *
  * The PPU continues to simulate and draw its native 256x240 frame. In a wide
  * view this compositor samples the nametables using the per-scanline scroll
@@ -57,7 +57,7 @@ static uint32_t background_pixel(int screen_x, int world_x, int world_y,
     return cyc_render_color_value(color);
 }
 
-static int place_excited_sprite(int slot, int x, int y, int *out_x, void *user)
+static int place_centered_sprite(int slot, int x, int y, int *out_x, void *user)
 {
     (void)slot;
     (void)y;
@@ -66,7 +66,7 @@ static int place_excited_sprite(int slot, int x, int y, int *out_x, void *user)
     return 1;
 }
 
-static int compose_excitebike_widescreen(uint32_t *out, int width, int height,
+static int compose_warioswoods_widescreen(uint32_t *out, int width, int height,
                                          int native_x0, const uint32_t *native,
                                          void *user)
 {
@@ -101,7 +101,7 @@ static int compose_excitebike_widescreen(uint32_t *out, int width, int height,
     /* Reuse the engine's OAM/pattern-table sprite renderer so priority,
      * flips, 8x16 sprites and the NES sprite limit follow the captured frame. */
     cyc_render_sprites(out, width, height, native_x0,
-                       s_background_opaque, place_excited_sprite, NULL);
+                       s_background_opaque, place_centered_sprite, NULL);
 
     /* Never redraw the original viewport: it remains the exact native NES
      * image, including mid-scanline effects that a side-margin reconstruction
@@ -113,13 +113,13 @@ static int compose_excitebike_widescreen(uint32_t *out, int width, int height,
     return 1;
 }
 
-static void excitebike_power_on(void *ctx)
+static void warioswoods_power_on(void *ctx)
 {
     (void)ctx;
-    cyc_render_set_compositor(compose_excitebike_widescreen, NULL);
+    cyc_render_set_compositor(compose_warioswoods_widescreen, NULL);
 }
 
-static int excitebike_get_view_mode(void *ctx)
+static int warioswoods_get_view_mode(void *ctx)
 {
     (void)ctx;
     switch (cyc_video_mode()) {
@@ -132,7 +132,7 @@ static int excitebike_get_view_mode(void *ctx)
     }
 }
 
-static bool excitebike_set_view_mode(void *ctx, int mode)
+static bool warioswoods_set_view_mode(void *ctx, int mode)
 {
     (void)ctx;
     switch (mode) {
@@ -150,11 +150,11 @@ static bool excitebike_set_view_mode(void *ctx, int mode)
     }
 }
 
-static const CycHostOption excitebike_options[] = {
+static const CycHostOption warioswoods_options[] = {
     { "--widescreen", true, "stock, 16:9, 21:9, 32:9 or fit" },
 };
 
-static bool excitebike_option(void *ctx, const char *name, const char *value)
+static bool warioswoods_option(void *ctx, const char *name, const char *value)
 {
     (void)ctx;
     int mode;
@@ -167,15 +167,15 @@ static bool excitebike_option(void *ctx, const char *name, const char *value)
 const CycHostExtras *cyc_host_extras(void)
 {
     static const CycHostExtras extras = {
-        .power_on = excitebike_power_on,
+        .power_on = warioswoods_power_on,
         .view_modes = RECOMP_RUNTIME_UI_VIEW_MODE_NATIVE |
                       RECOMP_RUNTIME_UI_VIEW_MODE_FIXED_16_9 |
                       RECOMP_RUNTIME_UI_VIEW_MODE_ADAPTIVE,
-        .get_view_mode = excitebike_get_view_mode,
-        .set_view_mode = excitebike_set_view_mode,
-        .options = excitebike_options,
-        .option_count = sizeof(excitebike_options) / sizeof(excitebike_options[0]),
-        .option = excitebike_option,
+        .get_view_mode = warioswoods_get_view_mode,
+        .set_view_mode = warioswoods_set_view_mode,
+        .options = warioswoods_options,
+        .option_count = sizeof(warioswoods_options) / sizeof(warioswoods_options[0]),
+        .option = warioswoods_option,
     };
     return &extras;
 }

@@ -29,4 +29,4 @@ echo "Bootstrapping portable CMake and Python..."
 bash "$ROOT/tools/bootstrap.sh"
 
 echo "Setup complete. Use:"
-echo "  bash tools/build.sh \"/path/to/Excitebike.nes\""
+echo "  bash tools/build.sh \"/path/to/Wario's Woods.nes\""

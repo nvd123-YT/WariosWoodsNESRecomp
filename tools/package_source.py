@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Create a source-only release with pinned NESRecomp, recomp-ui and SDL2 sources.
 
-No Excitebike ROM, ROM-derived generated code, executable, save or local build
+No Wario's Woods ROM, ROM-derived generated code, executable, save or local build
 product is placed in the archive.
 """
 from __future__ import annotations
@@ -13,7 +13,7 @@ import subprocess
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-ARCHIVE_ROOT = "ExcitebikeNESRecompiled"
+ARCHIVE_ROOT = "WariosWoodsNESRecomp"
 ROOT_FILES = (
     ".gitmodules",
     ".gitignore",
@@ -23,6 +23,12 @@ ROOT_FILES = (
     "setup.sh",
     "setup.bat",
     "cmake/bundled-sdl2/SDL2Config.cmake",
+    "cmake/apply_nesrecomp_patches.cmake",
+    "launcher.py",
+    "src/warioswoods_host.c",
+    "tools/package_builder.py",
+    "tools/verify_bundled_packages.py",
+    "tools/verify_widescreen_capture.py",
     "tools/bootstrap.sh",
     "tools/bootstrap.ps1",
     "tools/build.sh",
@@ -97,10 +103,10 @@ def main() -> int:
             entries.append((source, f"{ARCHIVE_ROOT}/{relative.as_posix()}"))
 
     metadata = (
-        "ExcitebikeNESRecompiled source release\n"
+        "WariosWoodsNESRecomp source release\n"
         "Source-only package. It includes pinned dependency sources and local "
         "build/bootstrap scripts.\n"
-        "No Excitebike ROM, ROM-derived generated C source, playable binary, "
+        "No Wario's Woods ROM, ROM-derived generated C source, playable binary, "
         "save, or local build output is included.\n\n"
         "Pinned dependency revisions:\n"
         + "\n".join(revisions)

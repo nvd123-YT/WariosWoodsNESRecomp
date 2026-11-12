@@ -20,7 +20,7 @@ if ($LASTEXITCODE -ne 0) { throw "CMake configure failed with exit code $LASTEXI
 & $CMakeBin --build (Join-Path $Root "build") --config Release --parallel 4
 if ($LASTEXITCODE -ne 0) { throw "Build failed with exit code $LASTEXITCODE" }
 
-$Exe = Join-Path $Root "build/Release/ExcitebikeRecomp.exe"
-if (-not (Test-Path $Exe)) { $Exe = Join-Path $Root "build/ExcitebikeRecomp.exe" }
-if (-not (Test-Path $Exe)) { throw "Excitebike executable not found after successful build." }
+$Exe = Join-Path $Root "build/Release/WariosWoodsRecomp.exe"
+if (-not (Test-Path $Exe)) { $Exe = Join-Path $Root "build/WariosWoodsRecomp.exe" }
+if (-not (Test-Path $Exe)) { throw "Wario's Woods executable not found after successful build." }
 & $Exe $RomPath

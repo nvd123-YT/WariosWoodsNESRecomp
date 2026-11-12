@@ -85,7 +85,7 @@ printf '%s\n' "$PYTHON_BIN" > "$TOOLS/python-path.txt"
 
 echo "[3/4] Preparing portable CMake $CMAKE_VERSION..."
 if [ "$OS" = "Darwin" ]; then
-  # Avoid nesting Kitware's CMake.app inside the Excitebike app bundle.
+  # Avoid nesting Kitware's CMake.app inside the Wario's Woods app bundle.
   # The universal2 PyPI wheel carries the relocatable CLI binary and CMake data.
   CMAKE_BIN="$TOOLS/cmake/cmake/data/bin/cmake"
   if [ ! -f "$CMAKE_BIN" ]; then

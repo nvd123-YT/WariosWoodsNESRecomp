@@ -87,7 +87,7 @@ def main() -> int:
             entries.append((source, "project/" + relative.as_posix()))
 
     metadata = [
-        "Excitebike Recompiled local-build launcher resources",
+        "Wario's Woods Recompiled local-build launcher resources",
         "No ROM, ROM-derived native game code, saves, or built game executable is included.",
         "The user selects a compatible local ROM in the launcher; code generation and game compilation happen on that user's computer.",
         "Bundled build tools: portable CMake and managed Python runtime.",

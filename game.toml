@@ -1,4 +1,4 @@
 [game]
-output_prefix = "excitebike"
-name = "Excitebike"
+output_prefix = "warioswoods"
+name = "Wario's Woods"
 cycle_accurate = true

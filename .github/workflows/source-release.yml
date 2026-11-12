@@ -75,13 +75,13 @@ jobs:
       - name: Create synthetic NROM test cartridge (macOS/Linux)
         if: runner.os != 'Windows'
         shell: bash
-        run: python tests/create_smoke_rom.py --output "$RUNNER_TEMP/excitebike-ci-smoke.nes"
+        run: python tests/create_smoke_rom.py --output "$RUNNER_TEMP/warioswoods-ci-smoke.nes"
 
       - name: Create synthetic NROM test cartridge (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          $Rom = Join-Path $env:RUNNER_TEMP "excitebike-ci-smoke.nes"
+          $Rom = Join-Path $env:RUNNER_TEMP "warioswoods-ci-smoke.nes"
           python tests/create_smoke_rom.py --output $Rom
           if ($LASTEXITCODE -ne 0) { throw "Smoke ROM generation failed: $LASTEXITCODE" }
 
@@ -90,7 +90,7 @@ jobs:
         shell: bash
         run: |
           CMAKE="$(cat .tools/cmake-path.txt)"
-          "$CMAKE" -S . -B build-ci -DCMAKE_BUILD_TYPE=Release -DNESRECOMP_ROM="$RUNNER_TEMP/excitebike-ci-smoke.nes"
+          "$CMAKE" -S . -B build-ci -DCMAKE_BUILD_TYPE=Release -DNESRECOMP_ROM="$RUNNER_TEMP/warioswoods-ci-smoke.nes"
 
       - name: Compile and smoke-test native runtime (macOS/Linux)
         if: runner.os != 'Windows'
@@ -99,14 +99,14 @@ jobs:
           CMAKE="$(cat .tools/cmake-path.txt)"
           "$CMAKE" --build build-ci --parallel 4
           python tools/verify_bundled_packages.py --build-dir build-ci
-          ./build-ci/ExcitebikeRecomp "$RUNNER_TEMP/excitebike-ci-smoke.nes" --frames 120
+          ./build-ci/WariosWoodsRecomp "$RUNNER_TEMP/warioswoods-ci-smoke.nes" --frames 120
 
       - name: Configure native test build (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $CMake = (Get-Content .tools/cmake-path.txt -Raw).Trim()
-          $Rom = Join-Path $env:RUNNER_TEMP "excitebike-ci-smoke.nes"
+          $Rom = Join-Path $env:RUNNER_TEMP "warioswoods-ci-smoke.nes"
           & $CMake -S . -B build-ci "-DNESRECOMP_ROM=$Rom"
           if ($LASTEXITCODE -ne 0) { throw "CMake configure failed: $LASTEXITCODE" }
 
@@ -119,8 +119,8 @@ jobs:
           if ($LASTEXITCODE -ne 0) { throw "Native build failed: $LASTEXITCODE" }
           python tools/verify_bundled_packages.py --build-dir build-ci
           if ($LASTEXITCODE -ne 0) { throw "Bundled NESRecomp packages verification failed: $LASTEXITCODE" }
-          $Rom = Join-Path $env:RUNNER_TEMP "excitebike-ci-smoke.nes"
-          $Exe = Join-Path $PWD "build-ci/Release/ExcitebikeRecomp.exe"
+          $Rom = Join-Path $env:RUNNER_TEMP "warioswoods-ci-smoke.nes"
+          $Exe = Join-Path $PWD "build-ci/Release/WariosWoodsRecomp.exe"
           & $Exe $Rom --frames 120
           if ($LASTEXITCODE -ne 0) { throw "Native smoke test failed: $LASTEXITCODE" }
 
@@ -132,8 +132,8 @@ jobs:
           NESRECOMP_NO_LAUNCHER: "1"
         shell: bash
         run: |
-          ./build-ci/ExcitebikeRecomp "$RUNNER_TEMP/excitebike-ci-smoke.nes" --widescreen 16:9 --present-out "$RUNNER_TEMP/excitebike-wide.png" --present-every 120 --exit-after 120
-          python tools/verify_widescreen_capture.py "$RUNNER_TEMP/excitebike-wide.png" --width 426 --height 240
+          ./build-ci/WariosWoodsRecomp "$RUNNER_TEMP/warioswoods-ci-smoke.nes" --widescreen 16:9 --present-out "$RUNNER_TEMP/warioswoods-wide.png" --present-every 120 --exit-after 120
+          python tools/verify_widescreen_capture.py "$RUNNER_TEMP/warioswoods-wide.png" --width 426 --height 240
 
       - name: Smoke-test widescreen presentation (Windows)
         if: runner.os == 'Windows'
@@ -143,9 +143,9 @@ jobs:
           NESRECOMP_NO_LAUNCHER: "1"
         shell: pwsh
         run: |
-          $Rom = Join-Path $env:RUNNER_TEMP "excitebike-ci-smoke.nes"
-          $Capture = Join-Path $env:RUNNER_TEMP "excitebike-wide.png"
-          $Exe = Join-Path $PWD "build-ci/Release/ExcitebikeRecomp.exe"
+          $Rom = Join-Path $env:RUNNER_TEMP "warioswoods-ci-smoke.nes"
+          $Capture = Join-Path $env:RUNNER_TEMP "warioswoods-wide.png"
+          $Exe = Join-Path $PWD "build-ci/Release/WariosWoodsRecomp.exe"
           & $Exe $Rom --widescreen 16:9 --present-out $Capture --present-every 120 --exit-after 120
           if ($LASTEXITCODE -ne 0) { throw "Widescreen rendering test failed: $LASTEXITCODE" }
           python tools/verify_widescreen_capture.py $Capture --width 426 --height 240
@@ -190,64 +190,65 @@ jobs:
         if: matrix.id == 'macos-arm64'
         shell: bash
         run: |
-          python -m PyInstaller --noconfirm --clean --windowed --name ExcitebikeRecomp --osx-bundle-identifier com.nvd123.excitebikerecomp --add-data "$PWD/payload.zip:payload" --distpath dist --workpath pyinstaller-work launcher.py
-          test -d dist/ExcitebikeRecomp.app
+          python -m PyInstaller --noconfirm --clean --windowed --name WariosWoodsRecomp --osx-bundle-identifier com.nvd123.warioswoodsrecomp --add-data "$PWD/payload.zip:payload" --distpath dist --workpath pyinstaller-work launcher.py
+          test -d dist/WariosWoodsRecomp.app
           mkdir -p dmg-staging release
-          ditto dist/ExcitebikeRecomp.app dmg-staging/ExcitebikeRecomp.app
+          ditto dist/WariosWoodsRecomp.app dmg-staging/WariosWoodsRecomp.app
           ln -s /Applications dmg-staging/Applications
-          hdiutil create -volname "Excitebike Recompiled" -srcfolder dmg-staging -ov -format UDZO release/ExcitebikeRecomp-macOS-ARM64.dmg
-          hdiutil verify release/ExcitebikeRecomp-macOS-ARM64.dmg
+          hdiutil create -volname "Wario's Woods Recompiled" -srcfolder dmg-staging -ov -format UDZO release/WariosWoodsRecomp-macOS-ARM64.dmg
+          hdiutil verify release/WariosWoodsRecomp-macOS-ARM64.dmg
 
       - name: Package Windows standalone EXE
         if: matrix.id == 'windows-x64'
         shell: pwsh
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --windowed --name ExcitebikeRecomp --add-data "$($PWD.Path)\payload.zip;payload" --distpath dist --workpath pyinstaller-work launcher.py
+          python -m PyInstaller --noconfirm --clean --onefile --windowed --name WariosWoodsRecomp --add-data "$($PWD.Path)\payload.zip;payload" --distpath dist --workpath pyinstaller-work launcher.py
           if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed: $LASTEXITCODE" }
           New-Item -ItemType Directory -Force -Path release | Out-Null
-          Copy-Item dist/ExcitebikeRecomp.exe release/ExcitebikeRecomp-Windows-x64.exe
-          if (-not (Test-Path release/ExcitebikeRecomp-Windows-x64.exe)) { throw "Windows launcher EXE was not created." }
+          Copy-Item dist/WariosWoodsRecomp.exe release/WariosWoodsRecomp-Windows-x64.exe
+          if (-not (Test-Path release/WariosWoodsRecomp-Windows-x64.exe)) { throw "Windows launcher EXE was not created." }
 
       - name: Package Linux AppImage
         if: matrix.id == 'linux-x64'
         shell: bash
         run: |
-          python -m PyInstaller --noconfirm --clean --onefile --name ExcitebikeRecomp --add-data "$PWD/payload.zip:payload" --distpath dist --workpath pyinstaller-work launcher.py
+          python -m PyInstaller --noconfirm --clean --onefile --name WariosWoodsRecomp --add-data "$PWD/payload.zip:payload" --distpath dist --workpath pyinstaller-work launcher.py
           mkdir -p AppDir/usr/bin release
-          install -m 755 dist/ExcitebikeRecomp AppDir/usr/bin/ExcitebikeRecomp
+          install -m 755 dist/WariosWoodsRecomp AppDir/usr/bin/WariosWoodsRecomp
           cat > AppDir/AppRun <<'APPRUN'
           #!/bin/sh
           HERE="$(dirname "$(readlink -f "$0")")"
-          exec "$HERE/usr/bin/ExcitebikeRecomp" "$@"
+          exec "$HERE/usr/bin/WariosWoodsRecomp" "$@"
           APPRUN
           chmod 755 AppDir/AppRun
-          cat > AppDir/excitebike.desktop <<'DESKTOP'
+          cat > AppDir/warioswoods.desktop <<'DESKTOP'
           [Desktop Entry]
-          Name=Excitebike Recompiled Builder
-          Comment=Build Excitebike locally from your own ROM
-          Exec=ExcitebikeRecomp
-          Icon=excitebike
+          Name=Wario's Woods Recompiled Builder
+          Comment=Build Wario's Woods locally from your own ROM
+          Exec=WariosWoodsRecomp
+          Icon=warioswoods
           Type=Application
           Categories=Game;Emulator;
           Terminal=false
           DESKTOP
-          cat > AppDir/excitebike.svg <<'SVG'
+          cat > AppDir/warioswoods.svg <<'SVG'
           <svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
-            <rect width="256" height="256" rx="48" fill="#20242b"/>
-            <path d="M27 173h202" stroke="#f6c445" stroke-width="12" stroke-linecap="round"/>
-            <circle cx="75" cy="166" r="35" fill="none" stroke="#f4f4f4" stroke-width="11"/>
-            <circle cx="190" cy="166" r="35" fill="none" stroke="#f4f4f4" stroke-width="11"/>
-            <path d="M75 166l43-58 35 58H75l32-37 45 0 38 37M116 108l-13-21h-21" fill="none" stroke="#f04b3e" stroke-width="12" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M120 108l18-20h26" fill="none" stroke="#f6c445" stroke-width="11" stroke-linecap="round"/>
+            <rect width="256" height="256" rx="48" fill="#26313b"/>
+            <rect x="44" y="44" width="72" height="72" rx="10" fill="#75bf42"/>
+            <rect x="116" y="44" width="72" height="72" rx="10" fill="#f2c84b"/>
+            <rect x="80" y="116" width="72" height="72" rx="10" fill="#e85b48"/>
+            <rect x="152" y="116" width="60" height="60" rx="10" fill="#71a8d8"/>
+            <path d="M44 188h168" stroke="#f4f0df" stroke-width="8" stroke-linecap="round"/>
+            <path d="M70 212h116" stroke="#f4f0df" stroke-width="8" stroke-linecap="round" opacity=".65"/>
           </svg>
           SVG
           curl -fL "https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage" -o appimagetool.AppImage
           echo "ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  appimagetool.AppImage" | sha256sum -c -
           chmod +x appimagetool.AppImage
-          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool.AppImage --no-appstream AppDir release/ExcitebikeRecomp-Linux-x64.AppImage
-          chmod +x release/ExcitebikeRecomp-Linux-x64.AppImage
-          test -s release/ExcitebikeRecomp-Linux-x64.AppImage
-          file release/ExcitebikeRecomp-Linux-x64.AppImage
+          ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 ./appimagetool.AppImage --no-appstream AppDir release/WariosWoodsRecomp-Linux-x64.AppImage
+          chmod +x release/WariosWoodsRecomp-Linux-x64.AppImage
+          test -s release/WariosWoodsRecomp-Linux-x64.AppImage
+          file release/WariosWoodsRecomp-Linux-x64.AppImage
 
       - name: Upload platform package
         uses: actions/upload-artifact@v4
@@ -282,9 +283,9 @@ jobs:
       - name: Verify release assets
         shell: bash
         run: |
-          test -s release-assets/ExcitebikeRecomp-macOS-ARM64.dmg
-          test -s release-assets/ExcitebikeRecomp-Windows-x64.exe
-          test -s release-assets/ExcitebikeRecomp-Linux-x64.AppImage
+          test -s release-assets/WariosWoodsRecomp-macOS-ARM64.dmg
+          test -s release-assets/WariosWoodsRecomp-Windows-x64.exe
+          test -s release-assets/WariosWoodsRecomp-Linux-x64.AppImage
           ls -lh release-assets
 
       - name: Create a new GitHub Release for this successful push
@@ -297,13 +298,13 @@ jobs:
           TITLE="Platform launchers #$GITHUB_RUN_NUMBER ($SHORT_SHA)"
           NOTES="$(printf '%s\n' \
             'Three separate platform downloads are attached:' \
-            '- ExcitebikeRecomp-macOS-ARM64.dmg (contains ExcitebikeRecomp.app)' \
-            '- ExcitebikeRecomp-Windows-x64.exe' \
-            '- ExcitebikeRecomp-Linux-x64.AppImage' \
+            '- WariosWoodsRecomp-macOS-ARM64.dmg (contains WariosWoodsRecomp.app)' \
+            '- WariosWoodsRecomp-Windows-x64.exe' \
+            '- WariosWoodsRecomp-Linux-x64.AppImage' \
             '' \
-            'These are local-build launchers, not prebuilt game binaries. Open the launcher, select a compatible Excitebike .nes ROM that you are legally entitled to use, and let it generate and compile the native game locally.' \
+            'These are local-build launchers, not prebuilt game binaries. Open the launcher, select a compatible Wario's Woods .nes ROM that you are legally entitled to use, and let it generate and compile the native game locally.' \
             '' \
             'The packages include the launcher runtime, portable CMake, managed Python, NESRecomp, recomp-ui, SDL2 sources and project configuration. The operating-system C/C++ compiler and SDK must already be installed: Xcode Command Line Tools on macOS, Visual Studio 2022 C++ tools on Windows, or a compiler and desktop development libraries on Linux.' \
             '' \
-            'No ROM, ROM-derived game code, saves, or prebuilt Excitebike executable is distributed. Each platform package was built and checked in CI using a synthetic test cartridge.')"
+            'No ROM, ROM-derived game code, saves, or prebuilt Wario's Woods executable is distributed. Each platform package was built and checked in CI using a synthetic test cartridge.')"
           gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" --latest

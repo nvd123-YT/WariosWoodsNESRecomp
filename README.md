@@ -1,8 +1,8 @@
 # Wario's Woods Recompiled Builder
 
-A cross-platform **local-build launcher** for Wario's Woods (NES), based on [NESRecomp](https://github.com/mstan/nesrecomp), [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui), and a pinned SDL2 source dependency.
+A cross-platform **local-build launcher** for the NES version of Wario's Woods, built on [NESRecomp](https://github.com/mstan/nesrecomp), [recomp-ui](https://github.com/RetroPortingToolKit/recomp-ui), and a pinned SDL2 source dependency.
 
-> **Bring your own ROM.** The downloadable applications do not contain an Wario's Woods ROM, ROM-derived generated C source, or a prebuilt playable game. Open the platform launcher, select a compatible `.nes` ROM that you are legally entitled to use, and it will generate and compile the native game locally.
+> **Bring your own NES ROM.** This project targets the NES release, not the separate SNES version. The ROM picker requires an MMC3 / Mapper 4 cartridge. The downloadable applications do not contain a ROM, ROM-derived generated C source, or a prebuilt playable game; the native game is generated and compiled locally from a compatible `.nes` ROM you are legally entitled to use.
 
 ## Separate platform downloads
 
@@ -19,33 +19,35 @@ The release does not combine these downloads into one source ZIP. Previous relea
 Each platform package contains the launcher UI and its local-build resources:
 
 - A bundled Python runtime for the launcher.
-- Portable CMake.
-- A managed Python runtime for build-time tooling.
-- Full pinned NESRecomp and recomp-ui source trees, including NESRecomp's mod runtime/package generators and recomp-ui's Dear ImGui sources and launcher assets.
+- Portable CMake and a managed Python runtime for build-time tooling.
+- Full pinned NESRecomp and recomp-ui source trees, including NESRecomp's Mods runtime/package generators and recomp-ui's Dear ImGui sources and launcher assets.
 - SDL2 source, built statically as part of the local game build.
-- Warios Wood's named game configuration and bundled Mods integration.
+- Wario's Woods game configuration, host integration, widescreen presentation hook, and bundled Mods integration.
 
-The compiled game identifies itself as **Wario's Woods** in recomp-ui and its window title. Its Mods screen includes two NESRecomp packages generated for the selected ROM's exact cartridge identity: **Replay Capture** (enabled by default; recordings stay local) and **Twitch Chat** (optional and disabled by default; requires the separate chat bridge).
+The compiled game identifies itself as **Wario's Woods** in recomp-ui and its window title. The Mods screen includes NESRecomp's **Replay Capture** package (enabled by default; recordings stay local) and **Twitch Chat** package (optional and disabled by default; requires the separate chat bridge).
 
-The launcher extracts these resources into the user's application data directory, clears macOS Gatekeeper quarantine only from the bundled, checksum-verified CMake/Python tool folders, asks for a local ROM, runs CMake, compiles the native game, and starts it. The build directory and game saves stay on the user's computer and are not removed when the launcher closes.
+The launcher extracts these resources into the user's application-data directory, clears macOS Gatekeeper quarantine only from the bundled build-tool folders, asks for a local ROM, runs CMake, compiles the native game, and starts it. CMake and Python are bundled; the platform C/C++ compiler and SDK are still supplied by the operating system.
+
+## Cartridge and save compatibility
+
+The retail NES cartridges use **MMC3 / Mapper 4**. The common North American and European cartridges use battery-backed PRG RAM; the runtime supports the standard MMC3 mapper and cartridge NVRAM path. The launcher rejects ROMs whose headers do not identify Mapper 4, which helps prevent accidentally selecting the SNES version or an unrelated NES game.
+
+For battery-backed cartridges, the cycle runtime automatically loads and writes the game's battery save in a `saves` folder beside the native executable. The launcher keeps its build and save folders in the operating system's per-user application-data location, so saves remain there when the launcher package is updated. Save files are local and are never uploaded by the release workflow.
 
 ## Video enhancements
 
-The NES still runs its real hardware picture at **256×240**. The game now supplies a wide-view compositor that uses NESRecomp's recorded per-scanline PPU scroll, nametable, CHR and sprite state to draw the surrounding background. It does not stretch the original picture: the central 256×240 gameplay area is copied from the native frame unchanged, while the side margins are an experimental reconstruction. Scene transitions or mid-frame palette effects may therefore leave the extra margins less exact than the original viewport. The in-game settings panel wraps longer descriptions and keeps section navigation clickable in both narrow and wide layouts.
+The original NES hardware image remains **256×240**. The shared presentation layer provides the same display controls as the Excitebike builder:
 
-- **Pre-game recomp-ui launcher:** open **Settings → Display** before choosing **PLAY**. **Widescreen** offers Native, 16:9 Fixed and Adaptive; the choice is saved to the game's `ViewMode` setting.
-- **Pre-game recomp-ui launcher:** **HD resolution** offers Pack resolution and 1× through 64× output scales for a compatible Mesen HD texture pack. This setting is saved to `HDResolution`; it does not change the original NES framebuffer.
-- **In-game runtime menu:** press Escape and open **Display**. **View mode** and **HD resolution** remain available there as well. Adaptive follows the window's aspect ratio, up to the engine's 32:9 limit.
-- **Developer option:** `--widescreen stock|16:9|21:9|32:9|fit` selects a presentation mode directly.
-- **Integer scaling:** remains available for crisp whole-pixel scaling of the original NES image.
+- **Pre-game recomp-ui launcher:** open **Settings → Display** before choosing **PLAY**. **Widescreen** offers Native, 16:9 Fixed and Adaptive.
+- **In-game runtime menu:** press Escape and open **Display** to change **View mode** and **HD resolution**.
+- **HD resolution:** offers Pack resolution and 1× through 64× output scales for a compatible, user-supplied Mesen HD texture pack. It changes the HD-pack rendering scale, not the NES hardware framebuffer.
+- **Integer scaling:** remains available for crisp whole-pixel scaling.
 
-### HD texture packs vs. internal resolution
-
-Wario's Woods also builds NESRecomp's **HD texture-pack renderer**. A compatible, user-supplied Mesen HD pack can contain higher-resolution artwork; the in-game menu's **Display → HD resolution** setting then controls the pack's rendering scale (pack resolution or 1× through 64× processing scales). No HD pack is included, and this is not a generic switch that turns the NES's 256×240 hardware framebuffer into an arbitrary 4K/8K framebuffer. Without a compatible pack, the original NES artwork remains native-resolution and integer-scaled.
+The widened side margins are experimental reconstruction from captured PPU state, not a change to the original game logic. Wario's Woods is a different title from the source project, so the widescreen view needs visual playtesting with the selected ROM; use **Native** for the most faithful original presentation. No HD texture pack is included, and this is not a generic switch that turns the NES framebuffer into an arbitrary 4K/8K image.
 
 ## Operating-system requirements
 
-A platform compiler and SDK are still required. These are tightly integrated with each operating system and are not safely distributable as ordinary application resources:
+A platform compiler and SDK are still required:
 
 - **macOS:** Apple Silicon Mac and Xcode Command Line Tools (`xcode-select --install`).
 - **Windows:** Windows x64 and Visual Studio 2022 with the *Desktop development with C++* workload.
@@ -57,8 +59,8 @@ The launcher reports build errors in its output window. CMake and Python do not 
 
 1. Download the asset matching your operating system.
 2. Open the DMG and move `WariosWoodsRecomp.app` to Applications on macOS. On Windows, run the EXE. On Linux, make the AppImage executable and open it.
-3. Select your own compatible Wario's Woods `.nes` ROM in the launcher.
-4. Choose **Build Wario's Woods & Play**. The first local build compiles the pinned runtime and generated game code and can take several minutes. Later launches reuse that build when the same ROM and bundled project version are selected.
+3. Select your compatible Wario's Woods NES `.nes` ROM in the launcher.
+4. Choose **Build Wario's Woods & Play**. The first local build compiles the pinned runtime and generated game code; later launches reuse the matching build.
 
 On macOS, the app is not Developer ID notarized. If Gatekeeper blocks it, use Finder's Open context-menu action and review the macOS security prompt.
 
@@ -66,7 +68,7 @@ On Linux, the AppImage uses the x86_64 Type 2 format. If FUSE is unavailable, ex
 
 ## Reproducible source build
 
-Developers can clone the source and all pinned dependencies:
+Clone the source and all pinned dependencies:
 
 ```bash
 git clone --recurse-submodules https://github.com/nvd123-YT/WariosWoodsNESRecomp.git
@@ -89,16 +91,17 @@ powershell -ExecutionPolicy Bypass -File .\tools\build.ps1 "C:\Games\WariosWoods
 
 ## CI and release safety
 
-The public workflow builds the graphical runner and launcher on macOS ARM64, Windows x64, and Linux x64. It uses a synthetic NROM test cartridge only; it never uses a copyrighted Wario's Woods ROM or packages ROM-derived output. The three downloadable launcher packages contain source dependencies and portable build tools, but no game data.
+The public workflow builds the launcher and native runner on macOS ARM64, Windows x64, and Linux x64. CI uses a synthetic test cartridge only; it does not use a copyrighted Wario's Woods ROM or publish ROM-derived output. The three downloadable packages contain the launcher, portable CMake, managed Python, pinned source dependencies, and game project code—but no ROM, generated game code, saves, or compiled playable copy of Wario's Woods.
 
-Release publishing runs only after all three platform jobs and package checks pass. Each release has a unique tag of the form `build-RUN-ATTEMPT-COMMIT`, preserving older release pages and their download counters.
+Release publishing runs only after all three platform jobs and package checks pass. Each successful push receives a unique tag of the form `build-RUN-ATTEMPT-COMMIT`, preserving older release pages and their download counters.
 
 ## Repository contents
 
-- `launcher.py` — cross-platform ROM picker and local build UI.
-- `CMakeLists.txt` and `game.toml` — native recompilation project.
+- `launcher.py` — cross-platform ROM picker and local-build UI, including the Mapper 4 check.
+- `CMakeLists.txt` and `game.toml` — native recompilation project and Wario's Woods identity.
+- `src/warioswoods_host.c` — title host integration and display hook.
 - `nesrecomp/`, `recomp-ui/`, `SDL2/` — pinned dependency submodules.
 - `tools/package_builder.py` — creates the ROM-free resources embedded in each launcher.
-- `.github/workflows/source-release.yml` — three-platform build and unique release workflow.
+- `.github/workflows/source-release.yml` — three-platform build and unique-release workflow.
 
 No ROMs, generated game code, local saves, or compiled playable game are committed or published.

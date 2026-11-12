@@ -16,8 +16,8 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 
 
-APP_TITLE = "Excitebike Recompiled Builder"
-APP_ID = "ExcitebikeRecomp"
+APP_TITLE = "Wario's Woods Recompiled Builder"
+APP_ID = "WariosWoodsRecomp"
 
 
 def user_data_directory() -> Path:
@@ -114,14 +114,14 @@ def sha256_file(path: Path) -> str:
 
 def game_executable(build_root: Path) -> Path:
     candidates = (
-        (build_root / "Release" / "ExcitebikeRecomp.exe", build_root / "ExcitebikeRecomp.exe")
+        (build_root / "Release" / "WariosWoodsRecomp.exe", build_root / "WariosWoodsRecomp.exe")
         if os.name == "nt"
-        else (build_root / "ExcitebikeRecomp",)
+        else (build_root / "WariosWoodsRecomp",)
     )
     return next((candidate for candidate in candidates if candidate.is_file()), candidates[0])
 
 
-class ExcitebikeBuilder:
+class WariosWoodsBuilder:
     def __init__(self, root: tk.Tk) -> None:
         self.root = root
         self.root.title(APP_TITLE)
@@ -130,7 +130,7 @@ class ExcitebikeBuilder:
         self.events: queue.Queue[tuple[str, object]] = queue.Queue()
         self.running = False
         self.rom_path = tk.StringVar()
-        self.status = tk.StringVar(value="Choose your own Excitebike .nes ROM to build the game locally.")
+        self.status = tk.StringVar(value="Choose your own Wario's Woods .nes ROM to build the game locally.")
 
         self._build_interface()
         self.root.after(100, self._drain_events)
@@ -139,7 +139,7 @@ class ExcitebikeBuilder:
         outer = ttk.Frame(self.root, padding=18)
         outer.pack(fill=tk.BOTH, expand=True)
 
-        heading = ttk.Label(outer, text="EXCITEBIKE RECOMPILED", font=("TkDefaultFont", 19, "bold"))
+        heading = ttk.Label(outer, text="WARIO'S WOODS RECOMPILED", font=("TkDefaultFont", 19, "bold"))
         heading.pack(anchor=tk.W)
         subtitle = ttk.Label(
             outer,
@@ -157,7 +157,7 @@ class ExcitebikeBuilder:
         self.browse_button.pack(side=tk.LEFT, padx=(8, 0))
 
         self.build_button = ttk.Button(
-            rom_frame, text="Build Excitebike & Play", command=self._start_build
+            rom_frame, text="Build Wario's Woods & Play", command=self._start_build
         )
         self.build_button.pack(anchor=tk.W, pady=(10, 0))
 
@@ -201,7 +201,7 @@ class ExcitebikeBuilder:
 
     def _choose_rom(self) -> None:
         selected = filedialog.askopenfilename(
-            title="Select your Excitebike ROM",
+            title="Select your Wario's Woods ROM",
             filetypes=[("NES ROM files", "*.nes"), ("All files", "*.*")],
         )
         if selected:
@@ -216,14 +216,24 @@ class ExcitebikeBuilder:
             return
         try:
             with rom.open("rb") as source:
-                header = source.read(4)
+                header = source.read(16)
         except OSError as error:
             messagebox.showerror(APP_TITLE, "Could not read the selected ROM: " + str(error))
             return
-        if header != b"NES\x1a":
+        if len(header) < 16 or header[:4] != b"NES\x1a":
             messagebox.showerror(
                 APP_TITLE,
-                "The selected file does not have a valid iNES header. Select a compatible .nes ROM.",
+                "The selected file does not have a complete iNES/NES 2.0 header. Select a Wario's Woods NES ROM.",
+            )
+            return
+        flags6, flags7 = header[6], header[7]
+        mapper = (flags6 >> 4) | (flags7 & 0xF0)
+        if (flags7 & 0x0C) == 0x08:
+            mapper |= (header[8] & 0x0F) << 8
+        if mapper != 4:
+            messagebox.showerror(
+                APP_TITLE,
+                f"Wario's Woods for NES requires an MMC3 / Mapper 4 cartridge. This file reports Mapper {mapper}. Select a compatible .nes ROM.",
             )
             return
 
@@ -293,7 +303,7 @@ class ExcitebikeBuilder:
                     "log",
                     "A matching native build already exists. Skipping CMake configuration and compilation.",
                 )
-                self._emit("log", "Starting the existing Excitebike build…")
+                self._emit("log", "Starting the existing Wario's Woods build…")
                 subprocess.Popen([str(game), str(rom.resolve())], cwd=str(build_root))
                 self._emit("done", "reused")
                 return
@@ -339,7 +349,7 @@ class ExcitebikeBuilder:
 
             game = game_executable(build_root)
             if not game.is_file():
-                raise RuntimeError("Build completed but the ExcitebikeRecomp executable was not found.")
+                raise RuntimeError("Build completed but the WariosWoodsRecomp executable was not found.")
 
             new_state = {
                 "payload_sha256": digest,
@@ -349,7 +359,7 @@ class ExcitebikeBuilder:
             temporary_state.write_text(json.dumps(new_state, indent=2) + "\n", encoding="utf-8")
             temporary_state.replace(state_path)
 
-            self._emit("log", "Build succeeded. Starting Excitebike…")
+            self._emit("log", "Build succeeded. Starting Wario's Woods…")
             subprocess.Popen([str(game), str(rom.resolve())], cwd=str(build_root), env=environment)
             self._emit("done", "success")
         except Exception as error:
@@ -367,7 +377,7 @@ class ExcitebikeBuilder:
                     self.build_button.configure(state=tk.NORMAL)
                     self.browse_button.configure(state=tk.NORMAL)
                     if value == "success":
-                        self.status.set("Build complete. Excitebike has been launched.")
+                        self.status.set("Build complete. Wario's Woods has been launched.")
                         self._append("Game launched. Your build and saves remain in the application data folder.")
                     elif value == "reused":
                         self.status.set("Existing build launched. No rebuild was needed.")
@@ -383,7 +393,7 @@ class ExcitebikeBuilder:
 def main() -> int:
     root = tk.Tk()
     try:
-        ExcitebikeBuilder(root)
+        WariosWoodsBuilder(root)
     except Exception as error:
         messagebox.showerror(APP_TITLE, str(error))
         return 1

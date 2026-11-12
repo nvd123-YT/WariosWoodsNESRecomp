@@ -33,7 +33,7 @@ def main() -> int:
     for required in (
         'id = "nesrecomp.developer.replay"',
         'name = "Replay Capture"',
-        'game_id = "excitebike-nes"',
+        'game_id = "warioswoods-nes"',
         'id = "replay-capture"',
         "default_enabled = true",
         'id = "nesrecomp.replay-capture"',
@@ -45,7 +45,7 @@ def main() -> int:
     for required in (
         'id = "nesrecomp.twitch-chat"',
         'name = "Twitch Chat"',
-        'game_id = "excitebike-nes"',
+        'game_id = "warioswoods-nes"',
         'id = "chat"',
         "default_enabled = false",
         'id = "nesrecomp.twitch-chat"',

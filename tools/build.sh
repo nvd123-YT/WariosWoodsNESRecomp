@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
 if [ $# -lt 1 ]; then
-  echo "Usage: $0 /absolute/path/to/Excitebike.nes" >&2
+  echo "Usage: $0 /absolute/path/to/Wario's Woods.nes" >&2
   exit 2
 fi
 ROM="$1"
@@ -21,5 +21,5 @@ export PATH="$(dirname "$PYTHON_BIN"):$PATH"
   -DNESRECOMP_ROM="$ROM"
 "$CMAKE_BIN" --build "$ROOT/build" --parallel 4
 
-echo "Launching Excitebike..."
-exec "$ROOT/build/ExcitebikeRecomp" "$ROM"
+echo "Launching Wario's Woods..."
+exec "$ROOT/build/WariosWoodsRecomp" "$ROM"

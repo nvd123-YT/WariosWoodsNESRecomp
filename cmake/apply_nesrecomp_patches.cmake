@@ -70,8 +70,8 @@ if(NOT _nes_ui_source STREQUAL _nes_ui_original)
     file(WRITE "${_nes_ui_launcher}" "${_nes_ui_source}")
 endif()
 
-message(STATUS "Excitebike: pre-game recomp-ui Display → Widescreen registered")
-message(STATUS "Excitebike: pre-game recomp-ui HD resolution scale registered")
+message(STATUS "Wario's Woods: pre-game recomp-ui Display → Widescreen registered")
+message(STATUS "Wario's Woods: pre-game recomp-ui HD resolution scale registered")
 
 # Apply small, deterministic fixes to the pinned cycle runtime UI sources.
 # The upstream submodules stay immutable in Git; this patch is applied before
@@ -331,5 +331,5 @@ if(NOT _launcher_imgui_source STREQUAL _launcher_imgui_original)
     file(WRITE "${_launcher_imgui}" "${_launcher_imgui_source}")
 endif()
 
-message(STATUS "Excitebike: in-game Display → View mode registered")
-message(STATUS "Excitebike: fixed runtime settings navigation and wrapped setting descriptions")
+message(STATUS "Wario's Woods: in-game Display → View mode registered")
+message(STATUS "Wario's Woods: fixed runtime settings navigation and wrapped setting descriptions")
