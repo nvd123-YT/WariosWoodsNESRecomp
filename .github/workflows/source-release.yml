@@ -307,7 +307,7 @@ jobs:
             '' \
             'These are local-build launchers, not prebuilt game binaries. Open the launcher, select a compatible Wario's Woods .nes ROM that you are legally entitled to use, and let it generate and compile the native game locally.' \
             '' \
-            'The packages include the launcher runtime, portable CMake, managed Python, NESRecomp, recomp-ui, SDL2 sources and project configuration. The operating-system C/C++ compiler and SDK must already be installed: Xcode Command Line Tools on macOS, Visual Studio 2022 C++ tools on Windows, or a compiler and desktop development libraries on Linux.' \
+            'The packages include the launcher runtime, portable CMake, managed Python, NESRecomp, recomp-ui, SDL2 sources and project configuration. The operating-system C/C++ compiler and SDK must already be installed: Xcode Command Line Tools on macOS, Visual Studio 2022 or 2026 C++ tools on Windows, or a compiler and desktop development libraries on Linux.' \
             '' \
             'No ROM, ROM-derived game code, saves, or prebuilt Wario's Woods executable is distributed. Each platform package was built and checked in CI using a synthetic test cartridge.')"
           gh release create "$TAG" release-assets/* --target "$GITHUB_SHA" --title "$TITLE" --notes "$NOTES" --latest
