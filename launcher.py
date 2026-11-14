@@ -102,7 +102,10 @@ def cached_cmake_generator(build_root: Path) -> str | None:
     return None
 
 
-def windows_visual_studio_generator(cmake: Path) -> tuple[str, str]:
+def windows_visual_studio_generator(
+    cmake: Path,
+    preferred_generator: str | None = None,
+) -> tuple[str, str]:
     """Choose a generator matching the newest installed MSVC toolchain."""
     program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
     vswhere = Path(program_files_x86) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
@@ -115,7 +118,7 @@ def windows_visual_studio_generator(cmake: Path) -> tuple[str, str]:
     try:
         detected = subprocess.run(
             [
-                str(vswhere), "-latest", "-products", "*",
+                str(vswhere), "-all", "-products", "*",
                 "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
                 "-property", "installationVersion",
             ],
@@ -129,32 +132,44 @@ def windows_visual_studio_generator(cmake: Path) -> tuple[str, str]:
     except (OSError, subprocess.TimeoutExpired) as error:
         raise RuntimeError(f"Could not detect the installed Visual Studio C++ toolchain: {error}") from error
 
-    version = detected.stdout.strip()
-    version_match = re.match(r"^(\d+)\.", version)
-    if detected.returncode != 0 or not version_match:
+    generators = {
+        18: ("Visual Studio 18 2026", "vs18-2026"),
+        17: ("Visual Studio 17 2022", "vs17-2022"),
+    }
+    if detected.returncode != 0:
         raise RuntimeError(
             "Visual Studio C++ x64 build tools were not detected. Install the "
             "'Desktop development with C++' workload for Visual Studio 2022 or 2026."
         )
 
-    major = int(version_match.group(1))
-    generators = {
-        18: ("Visual Studio 18 2026", "vs18-2026"),
-        17: ("Visual Studio 17 2022", "vs17-2022"),
-    }
-    selected = generators.get(major)
-    if selected is None:
+    available: dict[str, tuple[str, int, tuple[int, ...]]] = {}
+    for version in detected.stdout.splitlines():
+        version = version.strip()
+        version_match = re.match(r"^(\d+(?:\.\d+)+)", version)
+        if not version_match:
+            continue
+        version_parts = tuple(int(part) for part in version_match.group(1).split("."))
+        selected = generators.get(version_parts[0])
+        if selected is None:
+            continue
+        generator, slug = selected
+        if cmake_help.returncode == 0 and generator in cmake_help.stdout:
+            available[generator] = (slug, version_parts[0], version_parts)
+
+    if preferred_generator in available:
+        slug = available[preferred_generator][0]
+        return preferred_generator, slug
+
+    if not available:
+        reported = detected.stdout.strip().replace("\n", ", ") or "none"
         raise RuntimeError(
-            f"Detected Visual Studio {version}, but this launcher supports Visual Studio "
-            "2022 and 2026. Install one of those versions with the C++ x64 tools."
+            f"Detected Visual Studio version(s): {reported}, but no supported C++ generator "
+            "is available. Install Visual Studio 2022 or 2026 with the C++ x64 workload and "
+            "use a launcher containing CMake 4.2 or newer."
         )
 
-    generator, slug = selected
-    if cmake_help.returncode != 0 or generator not in cmake_help.stdout:
-        raise RuntimeError(
-            f"The bundled CMake does not support {generator}. Download the latest "
-            "Wario's Woods launcher so it includes a compatible CMake version."
-        )
+    generator = max(available, key=lambda item: available[item][2])
+    slug = available[generator][0]
     return generator, slug
 
 
@@ -411,8 +426,10 @@ class WariosWoodsBuilder:
 
             generator_name = None
             if os.name == "nt":
-                generator_name, generator_slug = windows_visual_studio_generator(cmake)
                 existing_generator = cached_cmake_generator(build_root)
+                generator_name, generator_slug = windows_visual_studio_generator(
+                    cmake, preferred_generator=existing_generator
+                )
                 if existing_generator and existing_generator != generator_name:
                     preferred_name = f"build-{generator_slug}-{digest[:10]}"
                     alternate_root = data_root / preferred_name
