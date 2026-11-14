@@ -54,7 +54,7 @@ The widened side margins are experimental reconstruction from captured PPU state
 A platform compiler and SDK are still required:
 
 - **macOS:** Apple Silicon Mac and Xcode Command Line Tools (`xcode-select --install`).
-- **Windows:** Windows x64 and Visual Studio 2022 with the *Desktop development with C++* workload.
+- **Windows:** Windows x64 and Visual Studio 2022 or Visual Studio 2026 with the *Desktop development with C++* workload. The launcher detects the installed Visual Studio version.
 - **Linux:** x86_64, GCC or Clang, Make, OpenGL development files, and the desktop window/audio development headers for the distribution.
 
 The launcher reports build errors in its output window. CMake and Python do not need to be installed separately.

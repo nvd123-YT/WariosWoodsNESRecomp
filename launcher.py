@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path, PurePosixPath
 import queue
+import re
 import shutil
 import stat
 import subprocess
@@ -87,6 +88,89 @@ def find_tool(search_root: Path, names: tuple[str, ...]) -> Path:
         "A bundled build tool is missing: " + ", ".join(names) +
         ". Re-download the latest platform launcher."
     )
+
+
+def cached_cmake_generator(build_root: Path) -> str | None:
+    """Return the generator stored in an existing build cache, if any."""
+    cache_file = build_root / "CMakeCache.txt"
+    try:
+        for line in cache_file.read_text(encoding="utf-8", errors="replace").splitlines():
+            if line.startswith("CMAKE_GENERATOR:INTERNAL="):
+                return line.partition("=")[2].strip()
+    except OSError:
+        pass
+    return None
+
+
+def windows_visual_studio_generator(
+    cmake: Path,
+    preferred_generator: str | None = None,
+) -> tuple[str, str]:
+    """Prefer the generator already used by this build when it is still installed."""
+    program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
+    vswhere = Path(program_files_x86) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
+    if not vswhere.is_file():
+        raise RuntimeError(
+            "Visual Studio C++ x64 build tools were not found. Install Visual Studio 2022 "
+            "or 2026 with the 'Desktop development with C++' workload, then reopen the launcher."
+        )
+
+    try:
+        detected = subprocess.run(
+            [
+                str(vswhere), "-all", "-products", "*",
+                "-requires", "Microsoft.VisualStudio.Component.VC.Tools.x86.x64",
+                "-property", "installationVersion",
+            ],
+            check=False, capture_output=True, text=True, encoding="utf-8",
+            errors="replace", timeout=30,
+        )
+        cmake_help = subprocess.run(
+            [str(cmake), "--help"], check=False, capture_output=True,
+            text=True, encoding="utf-8", errors="replace", timeout=30,
+        )
+    except (OSError, subprocess.TimeoutExpired) as error:
+        raise RuntimeError(f"Could not detect the installed Visual Studio C++ toolchain: {error}") from error
+
+    generators = {
+        18: ("Visual Studio 18 2026", "vs18-2026"),
+        17: ("Visual Studio 17 2022", "vs17-2022"),
+    }
+    if detected.returncode != 0:
+        raise RuntimeError(
+            "Visual Studio C++ x64 build tools were not detected. Install the "
+            "'Desktop development with C++' workload for Visual Studio 2022 or 2026."
+        )
+
+    available: dict[str, tuple[str, int, tuple[int, ...]]] = {}
+    for version in detected.stdout.splitlines():
+        version = version.strip()
+        version_match = re.match(r"^(\d+(?:\.\d+)+)", version)
+        if not version_match:
+            continue
+        version_parts = tuple(int(part) for part in version_match.group(1).split("."))
+        selected = generators.get(version_parts[0])
+        if selected is None:
+            continue
+        generator, slug = selected
+        if cmake_help.returncode == 0 and generator in cmake_help.stdout:
+            available[generator] = (slug, version_parts[0], version_parts)
+
+    if preferred_generator in available:
+        slug = available[preferred_generator][0]
+        return preferred_generator, slug
+
+    if not available:
+        reported = detected.stdout.strip().replace("\n", ", ") or "none"
+        raise RuntimeError(
+            f"Detected Visual Studio version(s): {reported}, but no supported C++ generator "
+            "is available. Install Visual Studio 2022 or 2026 with the C++ x64 workload and "
+            "use a launcher containing CMake 4.2 or newer."
+        )
+
+    generator = max(available, key=lambda item: available[item][2])
+    slug = available[generator][0]
+    return generator, slug
 
 
 def clear_macos_quarantine(paths: tuple[Path, ...]) -> None:
@@ -234,7 +318,13 @@ class WariosWoodsBuilder:
     def _emit(self, kind: str, value: object) -> None:
         self.events.put((kind, value))
 
-    def _run_logged(self, command: list[str], environment: dict[str, str], cwd: Path) -> None:
+    def _run_logged(
+        self,
+        command: list[str],
+        environment: dict[str, str],
+        cwd: Path,
+        diagnostic_directory: Path | None = None,
+    ) -> None:
         self._emit("log", "$ " + subprocess.list2cmdline(command))
         process = subprocess.Popen(
             command,
@@ -248,11 +338,28 @@ class WariosWoodsBuilder:
             bufsize=1,
         )
         assert process.stdout is not None
+        tail: list[str] = []
         for line in process.stdout:
-            self._emit("log", line.rstrip())
+            line = line.rstrip()
+            self._emit("log", line)
+            tail.append(line)
+            if len(tail) > 100:
+                del tail[:20]
         result = process.wait()
         if result != 0:
-            raise RuntimeError(f"Command failed with exit code {result}: {command[0]}")
+            details = "\n".join(tail[-80:])
+            diagnostic_root = diagnostic_directory or cwd
+            configure_log = diagnostic_root / "CMakeFiles" / "CMakeConfigureLog.yaml"
+            error_log = diagnostic_root / "CMakeFiles" / "CMakeError.log"
+            extra = ""
+            if configure_log.is_file():
+                extra += f"\nCMake configure diagnostics: {configure_log}"
+            if error_log.is_file():
+                extra += f"\nCompiler detection log: {error_log}"
+            raise RuntimeError(
+                f"Command failed with exit code {result}: {command[0]}\n"
+                f"Last build output:\n{details}{extra}"
+            )
 
     def _build_worker(self, rom: Path) -> None:
         try:
@@ -277,6 +384,15 @@ class WariosWoodsBuilder:
                 build_state = json.loads(state_path.read_text(encoding="utf-8"))
             except (OSError, json.JSONDecodeError):
                 build_state = {}
+
+            saved_build_name = build_state.get("build_directory", "build")
+            if (
+                not isinstance(saved_build_name, str)
+                or Path(saved_build_name).name != saved_build_name
+                or not saved_build_name.startswith("build")
+            ):
+                saved_build_name = "build"
+            build_root = data_root / saved_build_name
 
             game = game_executable(build_root)
             cache_matches = (
@@ -308,6 +424,34 @@ class WariosWoodsBuilder:
                 for executable in (cmake, python):
                     os.chmod(executable, executable.stat().st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
 
+            generator_name = None
+            if os.name == "nt":
+                existing_generator = cached_cmake_generator(build_root)
+                generator_name, generator_slug = windows_visual_studio_generator(
+                    cmake, preferred_generator=existing_generator
+                )
+                if existing_generator and existing_generator != generator_name:
+                    preferred_name = f"build-{generator_slug}-{digest[:10]}"
+                    alternate_root = data_root / preferred_name
+                    suffix = 2
+                    while True:
+                        alternate_generator = cached_cmake_generator(alternate_root)
+                        if not alternate_generator or alternate_generator == generator_name:
+                            break
+                        alternate_root = data_root / f"{preferred_name}-{suffix}"
+                        suffix += 1
+                        if suffix > 100:
+                            raise RuntimeError(
+                                "Could not find a clean build directory for the detected Visual Studio generator. "
+                                "Existing builds have been left untouched."
+                            )
+                    self._emit(
+                        "log",
+                        f"The existing build cache uses {existing_generator}. Its build and saves will be kept; "
+                        f"the new build will use {alternate_root.name}.",
+                    )
+                    build_root = alternate_root
+
             environment = os.environ.copy()
             tool_paths = [str(cmake.parent), str(python.parent)]
             environment["PATH"] = os.pathsep.join(tool_paths + [environment.get("PATH", "")])
@@ -319,11 +463,11 @@ class WariosWoodsBuilder:
                 "-DNESRECOMP_ROM=" + str(rom.resolve()),
                 "-DPython3_EXECUTABLE=" + str(python),
             ]
-            if os.name == "nt":
-                configure.extend(["-G", "Visual Studio 17 2022", "-A", "x64"])
+            if generator_name:
+                configure.extend(["-G", generator_name, "-A", "x64"])
 
             self._emit("log", "Configuring the native game build…")
-            self._run_logged(configure, environment, project_root)
+            self._run_logged(configure, environment, project_root, diagnostic_directory=build_root)
 
             jobs = str(max(2, min(4, os.cpu_count() or 4)))
             self._emit("log", "Compiling SDL2, the NES runtime and the generated game code…")
@@ -331,6 +475,7 @@ class WariosWoodsBuilder:
                 [str(cmake), "--build", str(build_root), "--config", "Release", "--parallel", jobs],
                 environment,
                 project_root,
+                diagnostic_directory=build_root,
             )
 
             game = game_executable(build_root)
@@ -340,6 +485,7 @@ class WariosWoodsBuilder:
             new_state = {
                 "payload_sha256": digest,
                 "rom_sha256": rom_digest,
+                "build_directory": build_root.name,
             }
             temporary_state = state_path.with_suffix(".json.tmp")
             temporary_state.write_text(json.dumps(new_state, indent=2) + "\n", encoding="utf-8")

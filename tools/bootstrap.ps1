@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $Tools = Join-Path $Root ".tools"
 $Downloads = Join-Path $Tools "downloads"
-$CMakeVersion = "3.31.6"
+$CMakeVersion = "4.4.5"
 $UvVersion = "0.6.14"
 $PythonVersion = "3.12.9"
 
@@ -31,6 +31,15 @@ function Get-FirstFile([string]$Path, [string]$Name) {
 
 Write-Host "[1/4] Preparing portable CMake $CMakeVersion..."
 $CMakeBin = Get-FirstFile (Join-Path $Tools "cmake") "cmake.exe"
+if ($CMakeBin) {
+    $InstalledCMake = (& $CMakeBin --version 2>$null | Select-Object -First 1)
+    if ($InstalledCMake -ne "cmake version $CMakeVersion") {
+        Write-Host "Replacing stale bundled CMake with $CMakeVersion..."
+        Remove-Item -Recurse -Force (Join-Path $Tools "cmake")
+        New-Item -ItemType Directory -Force -Path (Join-Path $Tools "cmake") | Out-Null
+        $CMakeBin = $null
+    }
+}
 if (-not $CMakeBin) {
     $CMakeArchive = "cmake-$CMakeVersion-windows-x86_64.zip"
     $CMakeUrl = "https://github.com/Kitware/CMake/releases/download/v$CMakeVersion/$CMakeArchive"
@@ -94,11 +103,11 @@ foreach ($Path in $Required) {
 $ProgramFilesX86 = [Environment]::GetEnvironmentVariable("ProgramFiles(x86)")
 $VsWhere = Join-Path $ProgramFilesX86 "Microsoft Visual Studio/Installer/vswhere.exe"
 if (-not (Test-Path $VsWhere)) {
-    throw "Visual Studio 2022 C++ Build Tools are required. Install the Desktop development with C++ workload."
+    throw "Visual Studio 2022 or 2026 C++ Build Tools are required. Install the Desktop development with C++ workload."
 }
 $Vs = & $VsWhere -latest -products * -requires Microsoft.VisualStudio.Component.VC.Tools.x86.x64 -property installationPath
 if (-not $Vs) {
-    throw "Visual Studio C++ x64 tools were not found. Install the Desktop development with C++ workload."
+    throw "Visual Studio 2022 or 2026 C++ x64 tools were not found. Install the Desktop development with C++ workload."
 }
 
 Write-Host "Bootstrap complete."
