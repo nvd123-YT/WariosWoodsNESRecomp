@@ -106,7 +106,7 @@ def windows_visual_studio_generator(
     cmake: Path,
     preferred_generator: str | None = None,
 ) -> tuple[str, str]:
-    """Choose a generator matching the newest installed MSVC toolchain."""
+    """Prefer the generator already used by this build when it is still installed."""
     program_files_x86 = os.environ.get("ProgramFiles(x86)", r"C:\Program Files (x86)")
     vswhere = Path(program_files_x86) / "Microsoft Visual Studio" / "Installer" / "vswhere.exe"
     if not vswhere.is_file():
