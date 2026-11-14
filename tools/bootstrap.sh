@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TOOLS="$ROOT/.tools"
 DOWNLOADS="$TOOLS/downloads"
-CMAKE_VERSION="3.31.6"
+CMAKE_VERSION="4.5.0"
 UV_VERSION="0.6.14"
 PYTHON_VERSION="3.12.9"
 
@@ -88,6 +88,10 @@ if [ "$OS" = "Darwin" ]; then
   # Avoid nesting Kitware's CMake.app inside the Wario's Woods app bundle.
   # The universal2 PyPI wheel carries the relocatable CLI binary and CMake data.
   CMAKE_BIN="$TOOLS/cmake/cmake/data/bin/cmake"
+  if [ -f "$CMAKE_BIN" ] && ! "$CMAKE_BIN" --version | grep -qF "cmake version $CMAKE_VERSION"; then
+    echo "Replacing stale bundled CMake with $CMAKE_VERSION..."
+    rm -rf "$TOOLS/cmake"
+  fi
   if [ ! -f "$CMAKE_BIN" ]; then
     rm -rf "$TOOLS/cmake"
     mkdir -p "$TOOLS/cmake"
@@ -104,6 +108,12 @@ else
   CMAKE_URL="https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/$CMAKE_ARCHIVE"
   CMAKE_CHECKS_URL="https://github.com/Kitware/CMake/releases/download/v$CMAKE_VERSION/cmake-$CMAKE_VERSION-SHA-256.txt"
   CMAKE_BIN="$(find "$TOOLS/cmake" -type f -name cmake -perm -111 -print -quit 2>/dev/null || true)"
+  if [ -n "$CMAKE_BIN" ] && ! "$CMAKE_BIN" --version | grep -qF "cmake version $CMAKE_VERSION"; then
+    echo "Replacing stale bundled CMake with $CMAKE_VERSION..."
+    rm -rf "$TOOLS/cmake"
+    mkdir -p "$TOOLS/cmake"
+    CMAKE_BIN=""
+  fi
   if [ -z "$CMAKE_BIN" ]; then
     TMP="$DOWNLOADS/$CMAKE_ARCHIVE"
     curl -fL --retry 3 --retry-delay 2 "$CMAKE_URL" -o "$TMP"
