@@ -3,7 +3,7 @@ $ErrorActionPreference = "Stop"
 $Root = (Resolve-Path (Join-Path $PSScriptRoot "..")).Path
 $Tools = Join-Path $Root ".tools"
 $Downloads = Join-Path $Tools "downloads"
-$CMakeVersion = "4.5.0"
+$CMakeVersion = "4.4.5"
 $UvVersion = "0.6.14"
 $PythonVersion = "3.12.9"
 
