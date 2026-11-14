@@ -5,7 +5,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 TOOLS="$ROOT/.tools"
 DOWNLOADS="$TOOLS/downloads"
-CMAKE_VERSION="4.5.0"
+CMAKE_VERSION="4.4.5"
 UV_VERSION="0.6.14"
 PYTHON_VERSION="3.12.9"
 
